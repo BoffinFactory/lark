@@ -322,9 +322,9 @@ if __name__ == '__main__':
     display.flip();print(menu.__doc__)
 
     while True:
-        resp = menu(['one player',
-                     'two players',
-                     'level editor::not yet implemented',
+        resp = menu(['Mario',
+                     'Zelda',
+                     '',
                      '',
                      'options',
                      're-show::click here to show again',
@@ -339,5 +339,7 @@ if __name__ == '__main__':
                      hotspot    = (38,15))
 
         if resp[0] != "re-show": break
+	if resp[0] == "Mario":
+		print("Yes")
     print(resp)
     quit()
