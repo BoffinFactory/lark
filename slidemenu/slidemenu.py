@@ -6,6 +6,8 @@ font.init()
 from math import cos,radians
 try: import GetEvent
 except: from . import GetEvent
+import os
+import subprocess
 
 def menu(
          menu,                          # iterable of str as ("item",) or ("item::tooltip",)
@@ -341,6 +343,6 @@ if __name__ == '__main__':
 
         if resp[0] != "re-show": break
 	if resp[0] == "Mario":
-		print("Yes")
+		print os.popen("zsnes /home/logan/smw.smc")
     print(resp)
     quit()
