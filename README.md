@@ -4,7 +4,7 @@ lark setup
 
 (or use your distro's package manager to install said packages)
 
-To run:
+To run
 	$ python ./slidemenu.py
 
 Adding Games
