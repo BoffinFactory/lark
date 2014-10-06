@@ -77,7 +77,10 @@ def gui(path):
     d = Drawer(screen)
     lib = Library(font)
     games = []
-    sorted_state = 'not sorted'
+    sorted_state = 'Not Sorted'
+    sorted_states = ['Name', 'System', 'Year', 'Publisher', 'Genre', 'Players']
+    next_sorted_state_i = 0
+
     load(path, games, lib)
     rect_y_top = 40
     rect_y_bot = 560
@@ -119,6 +122,18 @@ def gui(path):
             exe = games[selected_game_i]['exe']
             print exe
             os.popen(exe)
+        # RShift - sort
+        if pressed[pygame.K_RSHIFT]:
+            games.sort(key=lambda gam: gam[sorted_states[next_sorted_state_i]])
+            sorted_state = sorted_states[next_sorted_state_i]
+            next_sorted_state_i += 1
+            if next_sorted_state_i == len(sorted_states):
+                next_sorted_state_i = 0
+        # RCtrl - to top
+        if pressed[pygame.K_RCTRL]:
+            selected_game_i = 0
+            top_of_screen_i = 0
+            rect_y = rect_y_top
 
         # Draw
         # Clear screen
@@ -157,11 +172,14 @@ def gui(path):
         d.draw_image(lib.get_image(game['Screenshot']), x, y)
         y += ydif
 
+        # Sorted status
+        d.draw_text(lib.get_text('Sorted by: ' + sorted_state, (0, 0, 200)), 550, 20)
+
         # Updates screen
         pygame.display.flip()
         # fps
         clock.tick(15)
-        # End gui
+        # End gui (loop)
 
 
 def main():
