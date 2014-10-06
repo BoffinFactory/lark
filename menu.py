@@ -67,22 +67,18 @@ def load(path, games, images):
 
 
 def main():
-    # Flag to allow no args
-    use_default_config = False
+    # Optional Hardcoded path
     default_config_path = None
 
     # cmd params
-    args = sys.argv[1:]
-    if not args:
-        if use_default_config:
-            path = default_config_path
-            print 'loading from ', default_config_path
-        else:
-            print 'Please provide a game list. See readme for details'
-            sys.exit(1)
+    if len(sys.argv) > 1:
+        path = sys.argv[1]
+    elif default_config_path is not None:
+        path = default_config_path
     else:
-        path = args[0]
-        print 'loading from ', args[0]
+        print 'Please provide a game list. See readme for details'
+        sys.exit(1)
+    print 'Loading from ', path
 
     # Load
     # Pygame stuff
