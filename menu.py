@@ -1,9 +1,9 @@
 #!/usr/bin/python
-import sys
-import pygame
 import json
-import collections
 import os
+import sys
+
+import pygame
 
 
 # Holds references to image objects
@@ -26,7 +26,6 @@ class Library:
             self.image_library[path] = image
         return image
 
-
     # returns a text object
     def get_text(self, strs, color=(0, 128, 0)):
         text = self.text_library.get((strs, color))
@@ -34,7 +33,6 @@ class Library:
             text = self.font.render(strs, True, color)
             self.text_library[(strs, color)] = text
         return text
-
 
 
 class Drawer:
@@ -66,20 +64,7 @@ def load(path, games, images):
     print games
 
 
-def main():
-    # Optional Hardcoded path
-    default_config_path = None
-
-    # cmd params
-    if len(sys.argv) > 1:
-        path = sys.argv[1]
-    elif default_config_path is not None:
-        path = default_config_path
-    else:
-        print 'Please provide a game list. See readme for details'
-        sys.exit(1)
-    print 'Loading from ', path
-
+def gui(path):
     # Load
     # Pygame stuff
     pygame.init()
@@ -87,27 +72,22 @@ def main():
     screen = pygame.display.set_mode((800, 600))
     # 'Game' loop condition
     done = False
-
     # Font name, size. Default is used
     font = pygame.font.Font(None, 20)
     d = Drawer(screen)
     lib = Library(font)
     games = []
-
+    sorted_state = 'not sorted'
     load(path, games, lib)
-
     rect_y_top = 40
     rect_y_bot = 560
     rect_x = 10
     rect_y = rect_y_top
     rect_width = 200
     rect_height = 40
-
     delta_y = 50
-
     selected_game_i = 0
     top_of_screen_i = 0
-
     # 'Game' loop
     while not done:
         # Input
@@ -153,7 +133,6 @@ def main():
             d.draw_text_centered(lib.get_text(game['Name']), x, y)
             y += delta_y
 
-
         x = 400
         y = 50
         ydif = 40
@@ -182,6 +161,24 @@ def main():
         pygame.display.flip()
         # fps
         clock.tick(15)
+        # End gui
+
+
+def main():
+    # Optional Hardcoded path
+    default_config_path = None
+
+    # cmd params
+    if len(sys.argv) > 1:
+        path = sys.argv[1]
+    elif default_config_path is not None:
+        path = default_config_path
+    else:
+        print 'Please provide a game list. See readme for details'
+        sys.exit(1)
+    print 'Loading from ', path
+
+    gui(path)
 
 if __name__ == '__main__':
     main()
