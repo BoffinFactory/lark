@@ -129,6 +129,11 @@ def gui(path):
             next_sorted_state_i += 1
             if next_sorted_state_i == len(sorted_states):
                 next_sorted_state_i = 0
+        # RCtrl - to top
+        if pressed[pygame.K_RCTRL]:
+            selected_game_i = 0
+            top_of_screen_i = 0
+            rect_y = rect_y_top
 
         # Draw
         # Clear screen
