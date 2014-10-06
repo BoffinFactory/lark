@@ -1,201 +1,191 @@
+#!/usr/bin/python
+import sys
 import pygame
 import json
 import collections
 import os
 
-pygame.init()
-screen = pygame.display.set_mode((800, 600))
-clock = pygame.time.Clock()
-done = False
+
+# Holds references to image objects
+class Library:
+
+    def __init__(self, font):
+        self.image_library = {}
+        self.text_library = {}
+        self.font = font
+
+    # returns the image found at the path given and creates a reference to it if needed
+    def get_image(self, path):
+        image = self.image_library.get(path)
+        if image is None:
+            try:
+                image = pygame.image.load(path)
+            except pygame.error:
+                print 'image ' + path + ' not found'
+                image = self.get_text(path, (255, 0, 0))
+            self.image_library[path] = image
+        return image
+
+
+    # returns a text object
+    def get_text(self, strs, color=(0, 128, 0)):
+        text = self.text_library.get((strs, color))
+        if text is None:
+            text = self.font.render(strs, True, color)
+            self.text_library[(strs, color)] = text
+        return text
 
 
 
-_image_library = {}
+class Drawer:
+    def __init__(self, screen):
+        self.screen = screen
 
-def create_image(path):
-    global _image_library
-    image = _image_library.get(path)
-    if image == None:
-            image = pygame.image.load(path)
-            _image_library[path] = image
+    def draw_text(self, text, x, y):
+        self.screen.blit(text, (x, y))
 
-def get_image(path):
-    global _image_library
-    image = _image_library.get(path)
-    if image == None:
-            image = pygame.image.load(path)
-            _image_library[path] = image
-    return image
+    def draw_text_centered(self, text, x, y):
+            self.screen.blit(text, (
+                x - text.get_width() // 2, y - text.get_height() // 2))
 
-def draw_image(image, x, y):
-    screen.blit(image, (x, y))
+    def draw_image(self, image, x, y):
+        self.screen.blit(image, (x, y))
+
+    def draw_rect(self, x, y, width, height, color=(50, 50, 50)):
+        pygame.draw.rect(self.screen, color, pygame.Rect(x, y, width, height))
 
 
+def load(path, games, images):
+    with open(path) as fh:
+        raw_str = fh.read()
+    json_data = json.loads(raw_str)
+    for game in json_data['games']:
+        games.append(game)
+        images.get_image(game['Screenshot'])
+        print game
+    print games
 
-#font = pygame.font.SysFont("comicsansms", 72)
-#text = font.render("Hello, World", True, (0, 128, 0))
-size = 20
-font = pygame.font.Font(None, size)
-_text_library = {}
 
-def creat_text(text, color):
-    global _text_library
-    color = (0, 128, 0)
-    _text_library[text] = font.render(text, True, color)
+def main():
+    # Flag to allow no args
+    use_default_config = False
+    default_config_path = None
 
-def get_text(text):
-    global _text_library
-    color = (0, 128, 0)
-    s = _text_library.get(text)
-    if s == None:
-        s = font.render(text, True, color)
-        _text_library[text] = s
-    return s
+    # cmd params
+    args = sys.argv[1:]
+    if not args:
+        if use_default_config:
+            path = default_config_path
+            print 'loading from ', default_config_path
+        else:
+            print 'Please provide a game list. See readme for details'
+            sys.exit(1)
+    else:
+        path = args[0]
+        print 'loading from ', args[0]
 
-def draw_text(text, x, y):
-    screen.blit(text, (x, y))
+    # Load
+    # Pygame stuff
+    pygame.init()
+    clock = pygame.time.Clock()
+    screen = pygame.display.set_mode((800, 600))
+    # 'Game' loop condition
+    done = False
 
-def draw_text_centered(text, x, y):
-    screen.blit(text,
-        (x - text.get_width() // 2, y - text.get_height() // 2))
+    # Font name, size. Default is used
+    font = pygame.font.Font(None, 20)
+    d = Drawer(screen)
+    lib = Library(font)
+    games = []
 
-def draw_rect(x, y, width, height, color):
-    pygame.draw.rect(screen, color, pygame.Rect(x, y, width, height))
+    load(path, games, lib)
 
-_games = collections.OrderedDict()
-_DATA_I = 0
-_X_I = 1
-_Y_I = 2
+    rect_y_top = 40
+    rect_y_bot = 560
+    rect_x = 10
+    rect_y = rect_y_top
+    rect_width = 200
+    rect_height = 40
 
-_Y_TOP = 60
-_DELTA_Y = 50
-def load():
-    global _games
-    global _DATA_I
-    global _X_I 
-    global _Y_I 
+    delta_y = 50
 
-    global _Y_TOP
-    global _DELTA_Y
+    selected_game_i = 0
+    top_of_screen_i = 0
 
-    f = open('./games.json')
-    s = f.read()
-    f.close()
-    j = json.loads(s)
+    # 'Game' loop
+    while not done:
+        # Input
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                done = True
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                done = True
 
-    x = 100
-    y = _Y_TOP
-    y_space = _DELTA_Y
-    for game in j['games']:
-        _games[game['Name']] = [game, x, y]
-        y += y_space
+        pressed = pygame.key.get_pressed()
+        # Up
+        if pressed[pygame.K_UP]:
+            if not rect_y <= rect_y_top:
+                rect_y -= delta_y
+                selected_game_i -= 1
+            elif selected_game_i != 0:
+                selected_game_i -= 1
+                top_of_screen_i -= 1
+        # Down
+        if pressed[pygame.K_DOWN]:
+            if not rect_y >= rect_y_bot - delta_y:
+                rect_y += delta_y
+                selected_game_i += 1
+            elif selected_game_i != len(games) - 1:
+                selected_game_i += 1
+                top_of_screen_i += 1
+        # Main Enter/return
+        if pressed[pygame.K_RETURN]:
+            exe = games[selected_game_i]['exe']
+            print exe
+            os.popen(exe)
 
-    #Jet Pac is used as a generic key. The key used does not matter as long as it has all the fields to be displayed
-    lables = _games['Jet Pac'][_DATA_I].keys()
-    for text in lables:
-        creat_text(text + ': ', None)
+        # Draw
+        # Clear screen
+        screen.fill((0, 0, 0))
+        # cursor
+        d.draw_rect(rect_x, rect_y, rect_width, rect_height)
+        # Draw list of games
+        x = 100
+        y = 60
+        for i in xrange(top_of_screen_i, len(games)):
+            game = games[i]
+            d.draw_text_centered(lib.get_text(game['Name']), x, y)
+            y += delta_y
 
-    print 'debug:'
-    print _games
-    for game in _games:
-        print '\t' + game
-        for dict_key in _games[game][_DATA_I].keys():
-            print '\t\t' + dict_key + ': ' + _games[game][_DATA_I][dict_key]
-            creat_text(_games[game][_DATA_I][dict_key], None)
-                
-    
-    print _games['Jet Pac'][_DATA_I]['Name']
-    print _text_library.keys()
-    create_image('./games/JetPac/JetPac.png')
-    #end load
 
-RECT_Y_TOP = 40
-#RECT_Y_BOT = 120
-rect_x = 10
-rect_y = RECT_Y_TOP
-rect_width = 200
-rect_height = 40
-color = (50, 50, 50)
-load()
-selected = _games.items()[0]
-print '\n\n', selected
-selected_i = 0
-selected_data = _games.items()[selected_i][1][0]
-print '\n', selected_data
-while not done:
-    #input
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            done = True
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-            done = True
+        x = 400
+        y = 50
+        ydif = 40
+        game = games[selected_game_i]
 
-    pressed = pygame.key.get_pressed()
-    #up
-    if pressed[pygame.K_UP]: 
-        if not rect_y <= RECT_Y_TOP: 
-            rect_y -= _DELTA_Y
-            selected_i -= 1
-            selected_data = _games.items()[selected_i][1][0]
-        elif selected_i != 0:
-            selected_i -= 1
-            selected_data = _games.items()[selected_i][1][0]
-            for game in _games:
-                print game
-                _games[game][_Y_I] -= _DELTA_Y
-    #down buggy
-    if pressed[pygame.K_DOWN]:
-        #if not rect_y >= RECT_Y_BOT:
-        if selected_i != len(_games.items())-1:
-            rect_y += _DELTA_Y
-            selected_i += 1
-            selected_data = _games.items()[selected_i][1][0]
-        #elif selected_i != len(_games.items())-1:
-         #   selected_i += 1
-          #  selected_data = _games.items()[selected_i][1][0]
-           # for game in _games:
-            #    _games[game][_Y_I] += _DELTA_Y
-    #enter
-    if pressed[pygame.K_RETURN]:
-        print selected_data['exe']
-        os.popen(selected_data['exe'])
-    
-    #begin draw
-    screen.fill((0, 0, 0))
-    #cursor
-    draw_rect(rect_x, rect_y, rect_width, rect_height, color)
-    #list games
-    for game_name in _games:
-        #if _games[game_name][_Y_I] >= _Y_TOP and _games[game_name][_Y_I] < RECT_Y_BOT:
-            draw_text_centered(_text_library[game_name], _games[game_name][_X_I], _games[game_name][_Y_I])
-    #list selected details
-    x = 400
-    y = 50
-    ydif = 40
+        d.draw_text(lib.get_text('Name: ' + game['Name']), x, y)
+        y += ydif
+        d.draw_text(lib.get_text('Developer: ' + game['Developer']), x, y)
+        y += ydif
+        d.draw_text(lib.get_text('Publisher: ' + game['Publisher']), x, y)
+        y += ydif
+        d.draw_text(lib.get_text('Year: ' + game['Year']), x, y)
+        y += ydif
+        d.draw_text(lib.get_text('System: ' + game['System']), x, y)
+        y += ydif
+        d.draw_text(lib.get_text('Genre: ' + game['Genre']), x, y)
+        y += ydif
+        d.draw_text(lib.get_text('Players: ' + game['Players']), x, y)
+        y += ydif
+        d.draw_text(lib.get_text('Screenshot: '), x, y)
+        y += ydif
+        d.draw_image(lib.get_image(game['Screenshot']), x, y)
+        y += ydif
 
-    draw_text(get_text('Name: ' + selected_data['Name']), x, y)
-    y += ydif
-    draw_text(get_text('Developer: ' + selected_data['Developer']), x, y)
-    y += ydif
-    draw_text(get_text('Publisher: ' + selected_data['Publisher']), x, y)
-    y += ydif
-    draw_text(get_text('Year: ' + selected_data['Year']), x, y)
-    y += ydif
-    draw_text(get_text('System: ' + selected_data['System']), x, y)
-    y += ydif
-    draw_text(get_text('Genre: ' + selected_data['Genre']), x, y)
-    y += ydif
-    draw_text(get_text('Players: ' + selected_data['Players']), x, y)
-    y += ydif
-    draw_text(get_text('Screenshot: '), x, y)
-    y += ydif
-    draw_image(get_image(selected_data['Screenshot']), x, y)
-    
-    #draw_image(_image_library['./games/JetPac/JetPac.png'], 20, 20)
-    
-    
-    
-    
-    pygame.display.flip()
-    #fps
-    clock.tick(15)
+        # Updates screen
+        pygame.display.flip()
+        # fps
+        clock.tick(15)
+
+if __name__ == '__main__':
+    main()

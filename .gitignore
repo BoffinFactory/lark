@@ -1,3 +1,11 @@
+#ignore games directory
+games/
+
+# rom
+*.png
+*.nes
+*.iso
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
